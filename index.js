@@ -19,6 +19,8 @@ app.get('/resdata', (req, res) => {
     // will need to update the span variable to include 6 month span, since span variable can only be a number based on the getDateRange() function
     const url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationId}&SensorNums=15&dur_code=${(span === '6 months' ? 'D' : 'M')}&${getDateRange(span)}`;
 
+    console.log(url);
+
     axios.get(url)
         .then(response => {
             return res.status(200).send(JSON.stringify(cleanData(response.data, span)));
