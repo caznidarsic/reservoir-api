@@ -3,7 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const { getDateRange, cleanData } = require('./utility');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 443;
 
 // Middleware to parse JSON requests
 app.use(express.json());
@@ -35,5 +35,3 @@ app.get('/resdata', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
-
-//CHANGE MADE!!!
