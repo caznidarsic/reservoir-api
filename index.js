@@ -3,7 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const { getDateRange, cleanData } = require('./utility');
 const app = express();
-const port = process.env.PORT || 443;
+const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
