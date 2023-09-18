@@ -8,8 +8,7 @@ const port = process.env.PORT || 3000;
 // Middleware to parse JSON requests
 app.use(express.json());
 app.use(cors({
-    origin: 'https://reservoirlevels.christianznidarsic.com',
-    origin: 'http://localhost:3001'
+    origin: ['https://reservoirlevels.christianznidarsic.com', 'http://localhost:3001']
 }));
 
 
