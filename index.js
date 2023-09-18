@@ -8,7 +8,7 @@ const port = process.env.PORT || 3000;
 // Middleware to parse JSON requests
 app.use(express.json());
 app.use(cors({
-    origin: 'https://reservoirlevels.christianznidarsic.com/resdata'
+    origin: 'https://reservoirlevels.christianznidarsic.com'
 }));
 
 
