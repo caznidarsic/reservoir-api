@@ -7,9 +7,9 @@ const port = process.env.PORT || 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
-// app.use(cors({
-//     origin: 'https://reservoirlevels.christianznidarsic.com/resdata'
-// }));
+app.use(cors({
+    origin: 'https://reservoirlevels.christianznidarsic.com/resdata'
+}));
 
 
 //endpoint to get monthly reservoir data
@@ -28,6 +28,7 @@ app.get('/resdata', (req, res) => {
             return res.status(200).send(JSON.stringify(cleanData(response.data, span)));
         })
         .catch(error => {
+            console.log("something bad happened!");
             console.log(error)
             return res.status(500).send(JSON.stringify({ message: `error fetching data` }));
         })
