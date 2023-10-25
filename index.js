@@ -57,73 +57,8 @@ async function fetchHistoricalApiData(stationid, span) {
 
 // function to call fetchApiData() and perform caching
 async function getResData(stationid, span) {
-    // let stationid = req.query.stationid.split(',');
-    // let span = req.query.span;
     let currentResults;
     let historicalResults;
-    // let id = stationids[0]
-
-
-    // try {
-
-    //     const promises = stationids.map(async (id) => {
-
-    //         const currentCacheResults = await redisClient.get(`monthly_storage_${id}_${span}`);
-    //         if (currentCacheResults) {
-    //             currentResults = JSON.parse(currentCacheResults);
-    //         }
-    //         else {
-    //             currentResults = await fetchCurrentApiData(id, span);
-    //             console.log('had to fetch from API (current)')
-    //             if (currentResults.length == 0) {
-    //                 throw "API returned an empty array";
-    //             }
-    //             await redisClient.set(`monthly_storage_${id}_${span}`, JSON.stringify(currentResults), {
-    //                 EX: getCacheTTL('monthly'),
-    //                 NX: true,
-    //             });
-    //         }
-
-
-    //         const historicalCacheResults = await redisClient.get(`monthly_storage_historical_${id}_${span}`);
-    //         if (historicalCacheResults) {
-    //             historicalResults = JSON.parse(historicalCacheResults);
-    //         }
-    //         else {
-    //             historicalResults = await fetchHistoricalApiData(id, span);
-    //             console.log('had to fetch from API (historical)')
-    //             if (!historicalResults) {
-    //                 throw "API returned no data";
-    //             }
-    //             await redisClient.set(`monthly_storage_historical_${id}_${span}`, JSON.stringify(historicalResults), {
-    //                 EX: getCacheTTL('annual'),
-    //                 NX: true,
-    //             });
-    //         }
-
-
-    //         currentResults = cleanData(currentResults, span);
-
-    //         let month
-    //         // add historical averages to the current data
-    //         currentResults.forEach(item => {
-    //             month = new Date(item.date).getMonth() + 1;
-    //             item.average = historicalResults[month].average;
-    //         })
-    //         console.log(currentResults[1])
-    //     })
-
-    //     await Promise.all(promises);
-
-    //     return res.status(200).send(JSON.stringify(currentResults));
-
-    // } catch (error) {
-    //     console.log("error fetching data!!");
-    //     console.log(error)
-    //     return res.status(500).send(JSON.stringify({ message: `error fetching data` }));
-    // }
-
-
 
     try {
         const currentCacheResults = await redisClient.get(`monthly_storage_${stationid}_${span}`);
@@ -158,8 +93,6 @@ async function getResData(stationid, span) {
             });
         }
 
-        // currentResults = cleanData(currentResults, span);
-
         let month
         // add historical averages to the current data
         currentResults.forEach(item => {
@@ -167,7 +100,6 @@ async function getResData(stationid, span) {
             item.average = historicalResults[month].average;
         })
 
-        // return res.status(200).send(JSON.stringify(currentResults));
         return currentResults;
 
     } catch (error) {
