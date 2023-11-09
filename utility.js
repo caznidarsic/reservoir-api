@@ -11,18 +11,25 @@ function getMonthlyDateRange(span) {
     const currentDate = new Date();
     let year = currentDate.getFullYear();
     let month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    let startMonth;
-    let startYear;
+    let startMonth = month;
+    let startYear = year - span;
+    let endMonth;
+    let endYear;
 
-
-    startMonth = month;
-    startYear = year - span;
-
+    if (month == 1) {
+        endMonth = 12;
+        endYear = year - 1;
+    }
+    else {
+        endMonth = month - 1;
+        endYear = year;
+    }
 
     // let day = String(currentDate.getDate()).padStart(2, '0');
     let day = 1; // setting to 1 so that no queries are made with days of months that don't exist (for example: February 31)
-    let endDate = `${year}-${month}-${day}`;
+    let endDate = `${endYear}-${endMonth}-${day}`;
     let startDate = `${startYear}-${startMonth}-${day}`;
+    console.log(`Start=${startDate}&End=${endDate}`)
     return `Start=${startDate}&End=${endDate}`
 }
 
@@ -94,9 +101,9 @@ function cleanData(data, cacheId) {
     }));
 
     //need to remove last element of data if data is sampled monthly, since the CDEC API returns -9999 for value of current month
-    if (cacheId === 'monthly_current') {
-        data.pop();
-    }
+    // if (cacheId === 'monthly_current') {
+    //     data.pop();
+    // }
 
     //interpolating missing values (missing values are represented as -9999 by the API)
     for (let i = 0; i < data.length; i++) {

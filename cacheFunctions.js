@@ -69,6 +69,7 @@ This is especially important for single day data. If a single day has a value of
 of -9999, since the CDEC API data is not always updated in a timely manner.
 */
 function isValid(results, cacheId) {
+    console.log("results in isValid: ", results, cacheId)
     if (cacheId === 'yesterday') {
         if (results[0].value == -9999) {
             // console.log('results are invalid ', cacheId, results[0].stationId)
@@ -76,10 +77,12 @@ function isValid(results, cacheId) {
         }
     }
     else if (cacheId === 'monthly_current') {
+        console.log("LAST VALUE: ", results[results.length - 1].value)
         if (results[results.length - 1].value == -9999) {
             return false;
         }
     }
+    console.log("IS VALID")
     return true;
 }
 
