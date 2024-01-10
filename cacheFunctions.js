@@ -1,6 +1,6 @@
 const redis = require('redis');
 const axios = require('axios');
-const { getMonthlyDateRange, getCurrentYear, getYesterdaysDate, cleanData, getCacheTTL, formatDateString } = require('./utility');
+const { getMonthlyDateRange, getCurrentYear, getPastDate, cleanData, getCacheTTL, formatDateString } = require('./utility');
 
 
 // initialize redis client and connect
@@ -50,10 +50,23 @@ async function fetchHistoricalApiData(stationid, cacheId) {
     return averages;
 }
 
-// function to fetch yesterday's reservoir level from API
-async function fetchYesterdaysApiData(stationid) {
-    const yesterdaysDate = getYesterdaysDate();
-    let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=D&Start=${yesterdaysDate}&End=${yesterdaysDate}`;
+// // function to fetch yesterday's reservoir level from API
+// async function fetchYesterdaysApiData(stationid) {
+//     const yesterdaysDate = getYesterdaysDate();
+//     let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=D&Start=${yesterdaysDate}&End=${yesterdaysDate}`;
+//     let data = await axios.get(url);
+//     data = data.data;
+
+//     // console.log("had to fetch from API (yesterday)")
+
+//     return data;
+// }
+
+// function to fetch past reservoir level from API
+async function fetchPastApiData(stationid, daysAgo) {
+    console.log("days ago: ", daysAgo);
+    let date = getPastDate(daysAgo);
+    let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=D&Start=${date}&End=${date}`;
     let data = await axios.get(url);
     data = data.data;
 
@@ -69,7 +82,7 @@ This is especially important for single day data. If a single day has a value of
 of -9999, since the CDEC API data is not always updated in a timely manner.
 */
 function isValid(results, cacheId) {
-    console.log("results in isValid: ", results, cacheId)
+    // console.log("results in isValid: ", results, cacheId)
     if (cacheId === 'yesterday') {
         if (results[0].value == -9999) {
             // console.log('results are invalid ', cacheId, results[0].stationId)
@@ -87,6 +100,9 @@ function isValid(results, cacheId) {
 }
 
 function resultsAreOld(results, cacheId) {
+    // console.log("DATA IN resultsAreOld: ", results);
+
+    // console.log("cacheId: ", cacheId);
     results = JSON.parse(results);
     const currentDate = new Date();
     let currentMonth = currentDate.getMonth() + 1;
@@ -130,8 +146,9 @@ function resultsAreOld(results, cacheId) {
             become available in the CDEC API until the next month. (ex. if it is October, then the 'monthly_current' data is valid
             if it goes up until September).*/
             let validMonth = (currentMonth == 1 ? 12 : currentMonth - 1);
+            let validYear = (currentMonth == 1 ? currentYear - 1 : currentYear);
 
-            if (month != validMonth || year != currentYear) {
+            if (month != validMonth || year != validYear) {
                 return true;
             }
         }
@@ -165,19 +182,30 @@ function resultsAreOld(results, cacheId) {
 // getCacheData("ORO", "monthly", 2)
 // cacheId = {"yesterday", "monthly_current", "monthly_historical"}
 async function getCacheData(stationid, cacheId, span = null) {
+    console.log("cacheId: ", cacheId)
+
     let results;
     try {
         const cacheResults = await redisClient.get(`${cacheId}_storage_${stationid}_${span}`);
 
         // handle the case where there is nothing in the cache for this cacheId
         if (!cacheResults) {
+            console.log('NO CACHE RESULTS ---------------------------------------')
             if (cacheId === 'yesterday') {
-                results = await fetchYesterdaysApiData(stationid);
+                results = await fetchPastApiData(stationid, 1);
                 if (isValid(results, cacheId)) {
+                    console.log("valid valid")
                     results = cleanData(results, cacheId);
                 }
                 else {
-                    throw "No data in cache and unable to fetch new data"
+                    // if yesterdays data not available, try two days ago
+                    results = await fetchPastApiData(stationid, 2);
+                    if (isValid(results, cacheId)) {
+                        results = cleanData(results, cacheId);
+                    }
+                    else {
+                        throw "No data in cache and unable to fetch new data"
+                    }
                 }
             } else if (cacheId === 'monthly_current') {
                 results = await fetchCurrentApiData(stationid, span);
@@ -203,14 +231,22 @@ async function getCacheData(stationid, cacheId, span = null) {
         else if (resultsAreOld(cacheResults, cacheId)) {
             // console.log("results are old ", cacheId, stationid);
             if (cacheId === 'yesterday') {
-                results = await fetchYesterdaysApiData(stationid);
+                results = await fetchPastApiData(stationid, 1);
                 if (isValid(results, cacheId)) {
                     results = cleanData(results, cacheId);
                 }
                 else {
-                    return JSON.parse(cacheResults);
+                    // if yesterdays data not available, try two days ago
+                    results = await fetchPastApiData(stationid, 2);
+                    if (isValid(results, cacheId)) {
+                        results = cleanData(results, cacheId);
+                    }
+                    else {
+                        return JSON.parse(cacheResults);
+                    }
                 }
             } else if (cacheId === 'monthly_current') {
+                console.log("YESTERDAY -----------------------------------------------")
                 results = await fetchCurrentApiData(stationid, span);
                 if (isValid(results, cacheId)) {
                     results = cleanData(results, cacheId);

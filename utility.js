@@ -7,8 +7,18 @@ function formatDateString(dateString) {
     })
 }
 
+// function to get a current Date object in Los_Angeles time (instead of UTC)
+function getCurrentDate() {
+    const todayUTC = new Date();
+    // the public API updates based on the Los_Angeles timezone, so our date values should be the same timezone
+    const todayString = todayUTC.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+    const today = new Date(todayString);
+    const date = new Date(today);
+    return date;
+}
+
 function getMonthlyDateRange(span) {
-    const currentDate = new Date();
+    const currentDate = getCurrentDate();
     let year = currentDate.getFullYear();
     let month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based
     let startMonth = month;
@@ -34,19 +44,19 @@ function getMonthlyDateRange(span) {
 }
 
 function getCurrentYear() {
-    const currentDate = new Date();
+    const currentDate = getCurrentDate();
     let year = currentDate.getFullYear();
     return `${year}`
 }
 
-// function to return yesterday's date
-function getYesterdaysDate() {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const year = yesterday.getFullYear();
-    const month = (yesterday.getMonth() + 1).toString().padStart(2, '0');
-    const day = yesterday.getDate().toString().padStart(2, '0');
+// function to return a past date
+function getPastDate(daysAgo) {
+    const today = getCurrentDate();
+    const oldDate = new Date(today);
+    oldDate.setDate(today.getDate() - daysAgo);
+    const year = oldDate.getFullYear();
+    const month = (oldDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = oldDate.getDate().toString().padStart(2, '0');
 
     return `${year}-${month}-${day}`;
 }
@@ -60,7 +70,7 @@ Currently, the server is on Pacific time, so it works.
 If moving to other servers, must update accordingly.
 */
 function getCacheTTL(interval) {
-    const currentDate = new Date();
+    const currentDate = getCurrentDate();
     let secondsLeft;
     if (interval === 'annual') {
         const currentYear = currentDate.getFullYear();
@@ -132,7 +142,7 @@ function cleanData(data, cacheId) {
 module.exports = {
     getMonthlyDateRange,
     getCurrentYear,
-    getYesterdaysDate,
+    getPastDate,
     cleanData,
     getCacheTTL,
     formatDateString,
