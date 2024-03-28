@@ -5,13 +5,14 @@ const { getMonthlyDateRange, getCurrentYear, getYesterdaysDate, cleanData, getCa
 const { getCacheData } = require('./cacheFunctions');
 const app = express();
 const redis = require('redis');
+// const sqlite3 = require('sqlite3').verbose();
 const port = process.env.PORT || 3000;
 
 
 // Middleware to parse JSON requests
 app.use(express.json());
 app.use(cors({
-    origin: ['https://reservoirlevels.christianznidarsic.com', 'http://localhost:3001']
+    origin: ['https://reservoirlevels.christianznidarsic.com', 'https://reservoirs.fyi', 'http://localhost:3001']
 }));
 
 
@@ -23,6 +24,16 @@ let redisClient;
 
     await redisClient.connect();
 })();
+
+
+// // initialize sqlite3 and connect
+// const db = new sqlite3.Database('reservoir_data.db', (err) => {
+//     if (err) {
+//         console.error('Error opening database:', err.message);
+//     } else {
+//         console.log('Connected to the SQLite database.');
+//     }
+// })
 
 
 // function to call fetchApiData() and perform caching
@@ -130,6 +141,33 @@ app.get('/resdata/daily', async (req, res) => {
         return res.status(500).send(JSON.stringify({ message: `error fetching data` }));
     }
 })
+
+
+// app.get('/resdata/test', async (req, res) => {
+
+//     // db.all(`INSERT INTO storage (station_id, storage, date, month)
+//     // VALUES ("ORO", 999999, "3/19/24", 1)`);
+//     let stationids = ['ORO'];
+//     let queryString =
+//         `SELECT monthly_storage.date
+//         FROM monthly_storage JOIN avg_monthly_storage
+//         ON monthly_storage.station_id=avg_monthly_storage.station_id
+//         AND monthly_storage.month=avg_monthly_storage.month
+//     WHERE monthly_storage.station_id="${stationids}"
+//     ORDER BY monthly_storage.date;`;
+
+//     db.all(queryString, (err, rows) => {
+//         if (err) {
+//             console.error('Error querying data:', err.message);
+//         } else {
+//             console.log('Query results:');
+//             rows.forEach(row => {
+//                 console.log(row);
+//             });
+//             res.json(rows);
+//         }
+//     });
+// })
 
 
 // Start the server
