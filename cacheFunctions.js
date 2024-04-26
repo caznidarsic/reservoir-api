@@ -14,40 +14,51 @@ let redisClient;
 
 // function to fetch data from API
 async function fetchCurrentApiData(stationid, span) {
-    let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=M&${getMonthlyDateRange(span)}`;
-    let data = await axios.get(url);
-    data = data.data;
-    // console.log("had to fetch from API (monthly_current)")
-    return data;
+    try {
+        console.log("############## fetchCurrentApiData() ################################################################################################################")
+        let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=M&${getMonthlyDateRange(span)}`;
+        let data = await axios.get(url);
+        data = data.data;
+        // console.log("had to fetch from API (monthly_current)")
+        return data;
+    } catch (error) {
+        return false;
+    }
+
 }
 
 // function to fetch historical data from API
 async function fetchHistoricalApiData(stationid, cacheId) {
-    let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=M&Start=1988-1-1&End=${getCurrentYear() - 1}-12-1`;
-    const apiResponse = await axios.get(url);
-    let data = cleanData(apiResponse.data, cacheId);
-    const averages = {};
-    let month;
-    let dateString = data[data.length - 1].date;
+    try {
+        console.log("############## fetchHistoricalApiData() ################################################################################################################")
+        let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=M&Start=1988-1-1&End=${getCurrentYear() - 1}-12-1`;
+        const apiResponse = await axios.get(url);
+        let data = cleanData(apiResponse.data, cacheId);
+        const averages = {};
+        let month;
+        let dateString = data[data.length - 1].date;
 
-    data.forEach(item => {
-        month = new Date(item.date).getMonth() + 1;
-        if (!averages[month]) {
-            averages[month] = { month: month, total: 0, count: 0 };
-        }
-        averages[month].total += item.value;
-        averages[month].count += 1;
-    })
+        data.forEach(item => {
+            month = new Date(item.date).getMonth() + 1;
+            if (!averages[month]) {
+                averages[month] = { month: month, total: 0, count: 0 };
+            }
+            averages[month].total += item.value;
+            averages[month].count += 1;
+        })
 
-    Object.keys(averages).forEach(key => {
-        const item = averages[key];
-        item.average = Math.floor(item.total / item.count);
-        item.date = dateString;
-    });
+        Object.keys(averages).forEach(key => {
+            const item = averages[key];
+            item.average = Math.floor(item.total / item.count);
+            item.date = dateString;
+        });
 
-    // console.log("had to fetch from API (monthly_historical)")
+        // console.log("had to fetch from API (monthly_historical)")
 
-    return averages;
+        return averages;
+    } catch (error) {
+        return false;
+    }
 }
 
 // // function to fetch yesterday's reservoir level from API
@@ -64,15 +75,20 @@ async function fetchHistoricalApiData(stationid, cacheId) {
 
 // function to fetch past reservoir level from API
 async function fetchPastApiData(stationid, daysAgo) {
-    console.log("days ago: ", daysAgo);
-    let date = getPastDate(daysAgo);
-    let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=D&Start=${date}&End=${date}`;
-    let data = await axios.get(url);
-    data = data.data;
+    try {
+        console.log("############## fetchHistoricalApiData() ################################################################################################################")
+        console.log("days ago: ", daysAgo);
+        let date = getPastDate(daysAgo);
+        let url = `https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=${stationid}&SensorNums=15&dur_code=D&Start=${date}&End=${date}`;
+        let data = await axios.get(url);
+        data = data.data;
 
-    // console.log("had to fetch from API (yesterday)")
+        // console.log("had to fetch from API (yesterday)")
 
-    return data;
+        return data;
+    } catch (error) {
+        return false
+    }
 }
 
 /* 
@@ -84,8 +100,12 @@ of -9999, since the CDEC API data is not always updated in a timely manner.
 function isValid(results, cacheId) {
     // console.log("results in isValid: ", results, cacheId)
     if (cacheId === 'yesterday') {
+        if (!results) {
+            return false;
+        }
         if (results[0].value == -9999) {
             // console.log('results are invalid ', cacheId, results[0].stationId)
+            console.log("INSIDE ISVALID #####################################################################################################################");
             return false;
         }
     }
@@ -229,7 +249,7 @@ async function getCacheData(stationid, cacheId, span = null) {
 
         // handle the case where the results in the cache are old/expired and need to be refreshed
         else if (resultsAreOld(cacheResults, cacheId)) {
-            // console.log("results are old ", cacheId, stationid);
+            console.log("results are old ", cacheId, stationid);
             if (cacheId === 'yesterday') {
                 results = await fetchPastApiData(stationid, 1);
                 if (isValid(results, cacheId)) {
@@ -248,7 +268,7 @@ async function getCacheData(stationid, cacheId, span = null) {
             } else if (cacheId === 'monthly_current') {
                 console.log("YESTERDAY -----------------------------------------------")
                 results = await fetchCurrentApiData(stationid, span);
-                if (isValid(results, cacheId)) {
+                if (results && isValid(results, cacheId)) {
                     results = cleanData(results, cacheId);
                 }
                 else {
@@ -272,6 +292,7 @@ async function getCacheData(stationid, cacheId, span = null) {
 
     } catch (error) {
         console.log("error fetching data!!!!");
+        console.log("THERE WAS AN ERROR")
         console.log(error)
         // return res.status(500).send(JSON.stringify({ message: `error fetching data` }));
     }

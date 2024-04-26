@@ -43,7 +43,10 @@ async function getResData(stationid, span) {
 
     try {
         currentResults = await getCacheData(stationid, 'monthly_current', span);
+        // console.log("currentResults: ", currentResults);
         historicalResults = await getCacheData(stationid, 'monthly_historical', span);
+        // console.log("historicalResults: ", historicalResults);
+
 
         let month
         // add historical averages to the current data
@@ -72,6 +75,7 @@ async function getMultiResData(stationids, span) {
 
     for (const id of stationids) {
         singleResResults = await getResData(id, span);
+        console.log("singleResResults: ", singleResResults);
 
         singleResResults.forEach(item => {
 
@@ -83,9 +87,10 @@ async function getMultiResData(stationids, span) {
             combinedResults[item.date].totalAverage += item.average;
         })
     }
+    console.log("combinedResults: ", combinedResults);
 
     const dataList = Object.keys(combinedResults).map((key) => combinedResults[key]);
-
+    console.log("dataList: ", dataList);
     return dataList;
 }
 
@@ -168,6 +173,11 @@ app.get('/resdata/daily', async (req, res) => {
 //         }
 //     });
 // })
+
+
+app.get('/resdata/test', async (req, res) => {
+    res.send("Hello from API!!");
+})
 
 
 // Start the server
