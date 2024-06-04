@@ -47,19 +47,23 @@ async function getResData(stationid, span) {
         historicalResults = await getCacheData(stationid, 'monthly_historical', span);
         // console.log("historicalResults: ", historicalResults);
 
+        // console.log("CurrentResults: ", currentResults);
+        // console.log("HistoricalResults: ", historicalResults);
+        if (currentResults && historicalResults) {
+            let month
+            // add historical averages to the current data
+            currentResults.forEach(item => {
+                month = new Date(item.date).getMonth() + 1;
+                item.average = historicalResults[month].average;
+            })
 
-        let month
-        // add historical averages to the current data
-        currentResults.forEach(item => {
-            month = new Date(item.date).getMonth() + 1;
-            item.average = historicalResults[month].average;
-        })
-
-        return currentResults;
+            return currentResults;
+        }
 
     } catch (error) {
-        console.log("error fetching data!!");
+        console.log("error in getResData()!");
         console.log(error)
+        return null;
     }
 
 }
@@ -75,17 +79,19 @@ async function getMultiResData(stationids, span) {
 
     for (const id of stationids) {
         singleResResults = await getResData(id, span);
-        console.log("singleResResults: ", singleResResults);
+        if (singleResResults) {
+            console.log("singleResResults: ", singleResResults);
 
-        singleResResults.forEach(item => {
+            singleResResults.forEach(item => {
 
-            month = new Date(item.date).getMonth() + 1;
-            if (!combinedResults[item.date]) {
-                combinedResults[item.date] = { date: item.date, totalAverage: 0 };
-            }
-            combinedResults[item.date][item.stationId] = item.value;
-            combinedResults[item.date].totalAverage += item.average;
-        })
+                month = new Date(item.date).getMonth() + 1;
+                if (!combinedResults[item.date]) {
+                    combinedResults[item.date] = { date: item.date, totalAverage: 0 };
+                }
+                combinedResults[item.date][item.stationId] = item.value;
+                combinedResults[item.date].totalAverage += item.average;
+            })
+        }
     }
     console.log("combinedResults: ", combinedResults);
 
